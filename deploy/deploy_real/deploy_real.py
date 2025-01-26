@@ -23,7 +23,9 @@ from config import Config
 class Controller:
     def __init__(self, config: Config) -> None:
         self.config = config
+        print("runA")
         self.remote_controller = RemoteController()
+        print("runB")
 
         # Initialize the policy network
         self.policy = torch.jit.load(config.policy_path)
@@ -35,7 +37,7 @@ class Controller:
         self.obs = np.zeros(config.num_obs, dtype=np.float32)
         self.cmd = np.array([0.0, 0, 0])
         self.counter = 0
-
+        print("runC")
         if config.msg_type == "hg":
             # g1 and h1_2 use the hg msg type
             self.low_cmd = unitree_hg_msg_dds__LowCmd_()
@@ -63,8 +65,12 @@ class Controller:
         else:
             raise ValueError("Invalid msg_type")
 
+        print("runD")
+
         # wait for the subscriber to receive data
         self.wait_for_low_state()
+
+        print("runE")
 
         # Initialize the command msg
         if config.msg_type == "hg":
@@ -86,6 +92,7 @@ class Controller:
         self.lowcmd_publisher_.Write(cmd)
 
     def wait_for_low_state(self):
+        print(self.low_state.tick)
         while self.low_state.tick == 0:
             time.sleep(self.config.control_dt)
         print("Successfully connected to the robot.")
@@ -232,19 +239,19 @@ if __name__ == "__main__":
     parser.add_argument("net", type=str, help="network interface")
     parser.add_argument("config", type=str, help="config file name in the configs folder", default="g1.yaml")
     args = parser.parse_args()
-
+    print("run1")
     # Load config
     config_path = f"{LEGGED_GYM_ROOT_DIR}/deploy/deploy_real/configs/{args.config}"
     config = Config(config_path)
 
     # Initialize DDS communication
     ChannelFactoryInitialize(0, args.net)
-
+    print("run2")
     controller = Controller(config)
 
     # Enter the zero torque state, press the start key to continue executing
     controller.zero_torque_state()
-
+    print("run3")
     # Move to the default position
     controller.move_to_default_pos()
 
@@ -254,6 +261,7 @@ if __name__ == "__main__":
     while True:
         try:
             controller.run()
+            print("run")
             # Press the select key to exit
             if controller.remote_controller.button[KeyMap.select] == 1:
                 break
